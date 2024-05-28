@@ -1,6 +1,8 @@
 from flask import Flask, send_file
 from pydantic import BaseModel, ValidationError, field_validator
-
+from lsystem.lsystem2d import LSystem2D
+from lsystem.lfigure import LFigure
+from lsystem.ldraw import draw_lines
 app = Flask(__name__)
 
 class Grammatic(BaseModel):
@@ -28,6 +30,17 @@ def l_system_file(grammatic: str):
 def l_system(grammatic: str):
     try:
         grammatic_ = Grammatic.parse_obj(dict(el.split("=") for el in grammatic.split(",")))
+
+        # Create an LSystem2D instance with the provided parameters
+        l_system = LSystem2D(iterations=grammatic_.iter, angle=grammatic_.angle, axiom=grammatic_.axiom,
+                             productions=grammatic_.prod)
+
+        # Generate the L-System figure
+        l_figure = l_system.generate()
+
+        # Draw the L-System figure and save it as an image
+        draw_lines(l_figure, "l_system_figure.png")
+
         return (
             f'<p>{grammatic_}</p>'
             + f'<img src="/l_system_file/{grammatic}" alt="L-System" width="500" height="500">'
@@ -35,6 +48,6 @@ def l_system(grammatic: str):
     except ValidationError as e:
         result = "<ul>"
         for error in e.errors():
-            result+= f"<li>{error}</li>"
+            result += f"<li>{error}</li>"
         result += "</ul>"
         return result
